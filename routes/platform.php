@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\ServiceCategory;
 use App\Orchid\Screens\Examples\ExampleActionsScreen;
 use App\Orchid\Screens\Examples\ExampleCardsScreen;
 use App\Orchid\Screens\Examples\ExampleChartsScreen;
@@ -14,6 +15,8 @@ use App\Orchid\Screens\Examples\ExampleTextEditorsScreen;
 use App\Orchid\Screens\PlatformScreen;
 use App\Orchid\Screens\Role\RoleEditScreen;
 use App\Orchid\Screens\Role\RoleListScreen;
+use App\Orchid\Screens\ServiceCategoryEditScreen;
+use App\Orchid\Screens\ServiceCategoryListScreen;
 use App\Orchid\Screens\User\UserEditScreen;
 use App\Orchid\Screens\User\UserListScreen;
 use App\Orchid\Screens\User\UserProfileScreen;
@@ -110,4 +113,18 @@ Route::screen('offer', OfferScreen::class)
         return $trail
             ->parent('platform.index')
             ->push('Offer');
+    });
+
+    Route::screen('service-categories', ServiceCategoryListScreen::class)
+    ->name('platform.serviceCategories')
+    ->breadcrumbs(fn (Trail $trail) =>
+        $trail->parent('platform.index')->push('Service Categories')
+    );
+
+Route::screen('service-categories/{serviceCategory?}', ServiceCategoryEditScreen::class)
+    ->name('platform.serviceCategories.edit')
+    ->breadcrumbs(function (Trail $trail, $serviceCategory) {
+        return $trail
+            ->parent('platform.serviceCategories')
+            ->push($serviceCategory->exists ? 'Edit' : 'Create');
     });
