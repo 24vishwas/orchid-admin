@@ -67,7 +67,7 @@ class AuthController extends Controller
   /**
      * Login user using phone
      */
-    public function loginWithPhone(Request $request)
+    public function loginWithPhone1(Request $request)
 {
     $request->validate([
         'phone' => 'required|string',
@@ -86,6 +86,36 @@ class AuthController extends Controller
         'message' => 'Login successful',
         'token' => $token,
         'user'  => $user,
+    ]);
+}
+public function loginWithPhone(Request $request)
+{
+    $request->validate([
+        'phone' => 'required|string|max:15',
+    ]);
+
+    // Try to find existing user
+    $user = User::where('phone', $request->phone)->first();
+
+    if (! $user) {
+        // Create new user with just phone
+        $user = User::create([
+            'phone'    => $request->phone,
+            'name'     => 'New User', // 👈 placeholder
+            'email'    => null,       // email not required yet
+            'password' => Hash::make(str()->random(12)), // dummy password
+        ]);
+    }
+
+    // Generate token
+    $token = $user->createToken('api_token')->plainTextToken;
+
+    return response()->json([
+        'message' => $user->wasRecentlyCreated
+            ? 'User registered and logged in successfully'
+            : 'Login successful',
+        'user'  => $user,
+        'token' => $token,
     ]);
 }
 
