@@ -12,8 +12,8 @@ Route::post('/login-phone', [AuthController::class, 'loginWithPhone']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
-    Route::get('/offers', [OfferController::class, 'index']);
+    Route::get('/{lang}/offers', [OfferController::class, 'index']);
     Route::post('/offers', [OfferController::class, 'store']);
 });
 
-Route::get('/service-categories', [ServiceCategoryController::class, 'index']);
+Route::get('/{lang}/service-categories', [ServiceCategoryController::class, 'index']);

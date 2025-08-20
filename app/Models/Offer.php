@@ -17,4 +17,18 @@ class Offer extends Model
         'image_url',
         'active',
     ];
+    public function translations()
+    {
+        return $this->hasMany(OfferTranslation::class);
+    }
+
+    public function getTitle($locale = null)
+    {
+        $locale = $locale ?? app()->getLocale();
+
+        return $this->translations()
+            ->where('locale', $locale)
+            ->first()
+            ->title ?? null;
+    }
 }

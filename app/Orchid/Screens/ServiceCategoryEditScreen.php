@@ -24,8 +24,21 @@ class ServiceCategoryEditScreen extends Screen
 
     public function query(ServiceCategory $serviceCategory): array
     {
+        // return [
+        //     'serviceCategory' => $serviceCategory,
+        // ];
         return [
-            'serviceCategory' => $serviceCategory,
+            'serviceCategory' => [
+                'id' => $serviceCategory->id,
+                'image_path' => $serviceCategory->image_path,
+                'active' => $serviceCategory->active,
+                'en' => [
+                    'title' => $serviceCategory->getTitle('en'),
+                ],
+                'kn' => [
+                    'title' => $serviceCategory->getTitle('kn'),
+                ],
+            ],
         ];
     }
 
@@ -36,9 +49,7 @@ class ServiceCategoryEditScreen extends Screen
      */
     public function name(): ?string
     {
-        return $this->serviceCategory->exists
-        ? 'Edit Service Category'
-        : 'Create Service Category';
+        return 'Edit Service Category';
     }
 
     /**
@@ -56,7 +67,7 @@ class ServiceCategoryEditScreen extends Screen
             Button::make('Remove')
                 ->icon('trash')
                 ->method('remove')
-                ->canSee($this->serviceCategory->exists),
+                // ->canSee($this->resource->exists),
         ];
     }
 
@@ -69,8 +80,11 @@ class ServiceCategoryEditScreen extends Screen
     {
         return [
             Layout::rows([
-                Input::make('serviceCategory.title')
-                    ->title('Title')
+                Input::make('serviceCategory.en.title')
+                    ->title('Title (EN)')
+                    ->required(),
+                Input::make('serviceCategory.kn.title')
+                    ->title('Title (KN)')
                     ->required(),
 
                 Switcher::make('serviceCategory.active')
@@ -89,13 +103,30 @@ class ServiceCategoryEditScreen extends Screen
     public function save(Request $request, ServiceCategory $serviceCategory)
     {
         // Validate (optional but recommended)
-        $request->validate([
-            'serviceCategory.title' => ['required', 'string', 'max:255'],
+        $validated = $request->validate([
+            'serviceCategory.en.title' => 'required|string|max:255',
+            'serviceCategory.kn.title' => 'required|string|max:255',
+            'serviceCategory.image_path' => 'nullable|string',
+            'serviceCategory.active' => 'nullable|boolean',
             // Note: Picture handles upload; validation here is optional
         ]);
 
-        $data = $request->get('serviceCategory');
-        $serviceCategory->fill($data)->save();
+        $serviceCategory->update([
+            'image_path' => $validated['serviceCategory']['image_path'],
+            'active' => $validated['serviceCategory']['active'],
+        ]);
+        foreach ($validated['serviceCategory'] as $locale => $fields) {
+            if (in_array($locale, ['en', 'kn'])) {
+                $serviceCategory->translations()->updateOrCreate(
+                    ['locale' => $locale], // condition
+                    ['title' => $fields['title'],
+                    'service_category_id' => $serviceCategory->id] // values to update/create
+                );
+            }
+        }
+
+        // $data = $request->get('serviceCategory');
+        // $serviceCategory->fill($data)->save();
 
         alert()->info('Service category saved successfully.');
         return redirect()->route('platform.serviceCategories');

@@ -27,25 +27,37 @@ class ServiceCategoryListScreen extends Screen
     public function query(): iterable
     {
         return [
-           'serviceCategories' => ServiceCategory::paginate(),
+            'serviceCategories' => ServiceCategory::with('translations')->latest()->get(),
         ];
     }
     /** 
-    * @param \Illuminate\Http\Request $request
-    *
-    * @return void
-    */
-   public function create(Request $request)
-   {
-       // Validate form data, save offer to database, etc.
-       $request->validate([
-           'serviceCategory.title' => 'required|max:255',
-       ]);
-   
-       $serviceCategory = new ServiceCategory();
-       $serviceCategory->title = $request->input('serviceCategory.title');
-       $serviceCategory->save();
-   }
+     * @param \Illuminate\Http\Request $request
+     *
+     * @return void
+     */
+    public function create(Request $request)
+    {
+        // Validate form data, save offer to database, etc.
+        $validated = $request->validate([
+            'serviceCategory.en.title' => 'required|max:255',
+            'serviceCategory.kn.title' => 'required|max:255',
+        ]);
+        $serviceCategory = ServiceCategory::create();
+
+        foreach ($validated['serviceCategory'] as $locale => $fields) {
+            // Skip if it's not actually a locale array (like 'name')
+            if (in_array($locale, ['en', 'kn'])) {
+                $serviceCategory->translations()->create([
+                    'locale' => $locale,
+                    'title' => $fields['title'],
+                ]);
+            }
+        }
+
+        //    $serviceCategory = new ServiceCategory();
+        //    $serviceCategory->title = $request->input('serviceCategory.title');
+        //    $serviceCategory->save();
+    }
     /**
      * The name of the screen displayed in the header.
      *
@@ -68,7 +80,7 @@ class ServiceCategoryListScreen extends Screen
                 ->modal('createServiceCategoryModal')
                 ->method('create')
                 ->icon('plus')
-            
+
         ];
     }
 
@@ -83,25 +95,34 @@ class ServiceCategoryListScreen extends Screen
             Layout::table('serviceCategories', [
                 TD::make('id', 'ID')->sort(),
 
-                TD::make('title', 'Title')
-                    ->render(fn(ServiceCategory $cat) => e($cat->title)),
+                // TD::make('title', 'Title')
+                //     ->render(fn(ServiceCategory $cat) => e($cat->title)),
+
+                TD::make('title_en', 'Title (EN)')
+                    ->render(fn(ServiceCategory $offer) => $offer->getTitle('en')),
+
+                TD::make('title_kn', 'Title (KN)')
+                    ->render(fn(ServiceCategory $offer) => $offer->getTitle('kn')),
 
                 TD::make('image_path', 'Image')
-                    ->render(fn(ServiceCategory $cat) =>
+                    ->render(
+                        fn(ServiceCategory $cat) =>
                         $cat->image_path
-                            ? "<img src='" . asset($cat->image_path) . "' width='60' />"
-                            : '—'
+                        ? "<img src='" . asset($cat->image_path) . "' width='60' />"
+                        : '—'
                     )->width('100px'),
 
                 TD::make('active', 'Active')
-                    ->render(fn(ServiceCategory $cat) =>
+                    ->render(
+                        fn(ServiceCategory $cat) =>
                         $cat->active ? '✅' : '❌'
                     ),
 
                 TD::make('Actions')
                     ->align(TD::ALIGN_CENTER)
                     ->width('200px')
-                    ->render(fn(ServiceCategory $cat) => 
+                    ->render(
+                        fn(ServiceCategory $cat) =>
                         Link::make('Edit')
                             ->route('platform.serviceCategories.edit', $cat->id)
                             ->icon('pencil')
@@ -112,13 +133,39 @@ class ServiceCategoryListScreen extends Screen
                             ->confirm('Are you sure you want to delete this category?')
                     ),
             ]),
-            Layout::modal('createServiceCategoryModal', [
-                Layout::rows([
-                    Input::make('serviceCategory.title')
-                        ->title('Title')
-                        ->required(),
-                ])
+            Layout::modal('createServiceCategoryModal', Layout::tabs([
+                'General' => [
+                    Layout::rows([
+                        Input::make('serviceCategory.name')
+                            ->title('DOnt enter this is not a real name'),
+                            // ->required(),
+                    ]),
+                ],
+                'English' => [
+                    Layout::rows([
+                        Input::make('serviceCategory.en.title')
+                            ->title('Title (English)')
+                            ->required(),
+                    ]),
+                ],
+                'Kannada' => [
+                    Layout::rows([
+                        Input::make('serviceCategory.kn.title')
+                            ->title('Title (Kannada)')
+                            ->required(),
+                    ]),
+                ],
+
+
+
+
+                // Layout::rows([
+                //     Input::make('serviceCategory.title')
+                //         ->title('Title')
+                //         ->required(),
+                // ])
             ])
+            )
         ];
     }
 

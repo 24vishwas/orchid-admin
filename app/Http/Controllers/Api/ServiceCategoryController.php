@@ -10,10 +10,13 @@ use Illuminate\Http\Request;
 class ServiceCategoryController extends Controller
 {
     //
-    public function index()
+    public function index($lang)
     {
-        return ServiceCategoryResource::collection(
-            ServiceCategory::where('active', true)->orderBy('title')->get()
-        );
+
+        if (!in_array($lang, ['en', 'kn'])) {
+            return response()->json(['error' => 'Language not supported'], 400);
+        }
+        $categories = ServiceCategory::with('translations')->get();
+        return ServiceCategoryResource::collection($categories);
     }
 }

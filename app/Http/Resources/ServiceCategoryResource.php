@@ -8,20 +8,25 @@ use Illuminate\Support\Facades\Storage;
 
 class ServiceCategoryResource extends JsonResource
 {
+    
     /**
      * Transform the resource into an array.
      *
      * @return array<string, mixed>
      */
-    public function toArray(Request $request): array
+    public function toArray($request)
     {
+        // Get lang param from request
+        $lang = $request->route('lang') ?? 'en';
+
+        $translation = $this->translations->where('locale', $lang)->first();
         return [
-            'id'        => $this->id,
-            'title'     => $this->title,
-            'image_url' => $this->image_path
-                ? Storage::disk('public')->url($this->image_path) // => /storage/...
-                : null,
-            'active'    => (bool) $this->active,
+            'id'       => $this->id,
+            'title'    => $translation?->title ?? null,
+            'image_url'=> $this->image_path 
+                          ? url($this->image_path)  // 👈 handles full path
+                          : null,
+            'active'   => $this->active,
         ];
     }
 }
